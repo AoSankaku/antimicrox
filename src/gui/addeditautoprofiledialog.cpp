@@ -53,6 +53,12 @@
 namespace {
 void showInForeground(QWidget *window)
 {
+    for (QWidget *parent = window->parentWidget(); parent != nullptr; parent = parent->parentWidget())
+    {
+        if (parent->isMinimized())
+            parent->showNormal();
+    }
+
     window->show();
     window->raise();
     window->activateWindow();

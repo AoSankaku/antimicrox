@@ -18,5 +18,12 @@ WinAppProfileTimerDialog::~WinAppProfileTimerDialog() { delete ui; }
 void WinAppProfileTimerDialog::startTimer()
 {
     appTimer.start(ui->intervalSpinBox->value() * 1000);
-    this->setEnabled(false);
+    setEnabled(false);
+
+    QWidget *applicationWindow = this;
+    while (applicationWindow->parentWidget() != nullptr)
+        applicationWindow = applicationWindow->parentWidget();
+
+    hide();
+    applicationWindow->showMinimized();
 }
