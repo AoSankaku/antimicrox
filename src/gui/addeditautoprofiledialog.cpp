@@ -342,7 +342,7 @@ void AddEditAutoProfileDialog::windowPropAssignment(CapturedWindowInfoDialog *di
     ui->winClassLineEdit->clear();
     ui->winNameLineEdit->clear();
 
-#ifdef WITH_X11
+#if defined(WITH_X11) || defined(Q_OS_WIN)
     if (dialog->useFullWindowPath() && dialog->getSelectedOptions() & CapturedWindowInfoDialog::WindowPath)
     {
         ui->applicationLineEdit->setText(dialog->getWindowPath());
