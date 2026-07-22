@@ -561,15 +561,14 @@ void JoyTabWidget::setAutoProfileState(bool active, bool paused)
 {
     autoProfileActive = active;
     autoProfilePaused = active && paused;
-    autoProfileLockBanner->setVisible(active);
+    autoProfileLockBanner->setVisible(true);
+    autoProfileLockButton->setEnabled(active);
 
     const QSignalBlocker blocker(autoProfileLockButton);
     autoProfileLockButton->setChecked(autoProfilePaused);
 
-    if (!active)
-        return;
-
-    const QString iconName = autoProfilePaused ? QStringLiteral("changes-allow") : QStringLiteral("changes-prevent");
+    const bool unlocked = !autoProfileActive || autoProfilePaused;
+    const QString iconName = unlocked ? QStringLiteral("changes-allow") : QStringLiteral("changes-prevent");
     const QIcon lockIcon = QIcon::fromTheme(iconName);
     autoProfileLockButton->setIcon(QIcon());
     autoProfileLockButton->setText(QString());
@@ -578,15 +577,25 @@ void JoyTabWidget::setAutoProfileState(bool active, bool paused)
         autoProfileLockButton->setIcon(lockIcon);
     } else
     {
-        autoProfileLockButton->setText(autoProfilePaused ? QString::fromUtf8("🔓") : QString::fromUtf8("🔒"));
+        autoProfileLockButton->setText(unlocked ? QString::fromUtf8("🔓") : QString::fromUtf8("🔒"));
     }
 
-    const QString message =
-        autoProfilePaused
-            ? tr("Automatic profile switching is temporarily paused. Manual profile and set changes will stay active.")
-            : tr("Automatic profiles are active. Profile and set changes may be overridden.");
-    const QString action = autoProfilePaused ? tr("Resume automatic profile switching")
-                                             : tr("Temporarily pause automatic profile switching");
+    QString message;
+    QString action;
+    if (!autoProfileActive)
+    {
+        message = tr("Automatic profiles are off. Manual profile and set changes will stay active.");
+        action = tr("Automatic profile switching is off. Enable it in Settings.");
+    } else if (autoProfilePaused)
+    {
+        message =
+            tr("Automatic profile switching is temporarily paused. Manual profile and set changes will stay active.");
+        action = tr("Resume automatic profile switching");
+    } else
+    {
+        message = tr("Automatic profiles are active. Profile and set changes may be overridden.");
+        action = tr("Temporarily pause automatic profile switching");
+    }
     autoProfileLockText->setText(message);
     autoProfileLockBanner->setAccessibleName(message);
     autoProfileLockBanner->setToolTip(action);
