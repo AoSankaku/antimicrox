@@ -38,11 +38,15 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QList>
 #include <QListIterator>
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <QThread>
+
+#include <algorithm>
 
 AddEditAutoProfileDialog::AddEditAutoProfileDialog(AutoProfileInfo *info, AntiMicroSettings *settings,
                                                    QList<InputDevice *> *devices, QList<QString> &reservedUniques, bool edit,
@@ -106,6 +110,7 @@ AddEditAutoProfileDialog::AddEditAutoProfileDialog(AutoProfileInfo *info, AntiMi
     }
 
     ui->profileLineEdit->setText(info->getProfileLocation());
+    populateProfileChoices();
     ui->applicationLineEdit->setText(info->getExe());
     ui->winClassLineEdit->setText(info->getWindowClass());
     ui->winNameLineEdit->setText(info->getWindowName());
@@ -122,6 +127,12 @@ AddEditAutoProfileDialog::AddEditAutoProfileDialog(AutoProfileInfo *info, AntiMi
     ui->asDefaultCheckBox->setEnabled(info->isCurrentDefault());
 
     connect(ui->profileBrowsePushButton, &QPushButton::clicked, this, &AddEditAutoProfileDialog::openProfileBrowseDialog);
+    connect(ui->profileComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this,
+            [this](int index) {
+                const QString profilePath = ui->profileComboBox->itemData(index).toString();
+                if (!profilePath.isEmpty())
+                    ui->profileLineEdit->setText(profilePath);
+            });
     connect(ui->applicationPushButton, &QPushButton::clicked, this, &AddEditAutoProfileDialog::openApplicationBrowseDialog);
     connect(ui->devicesComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
             &AddEditAutoProfileDialog::checkForReservedUniques);
@@ -157,7 +168,77 @@ void AddEditAutoProfileDialog::openProfileBrowseDialog()
         QFileDialog::getOpenFileName(this, tr("Open Config"), lookupDir, QString("Config Files (*.amgp *.xml)"));
 
     if (!filename.isNull() && !filename.isEmpty())
-        ui->profileLineEdit->setText(QDir::toNativeSeparators(filename));
+    {
+        const QString profilePath = QDir::toNativeSeparators(filename);
+        addProfileChoice(profilePath);
+        ui->profileComboBox->setCurrentIndex(ui->profileComboBox->findData(profilePath));
+        ui->profileLineEdit->setText(profilePath);
+    }
+}
+
+void AddEditAutoProfileDialog::populateProfileChoices()
+{
+    QStringList profilePaths;
+    const auto appendProfile = [&profilePaths](const QString &profilePath) {
+        if (profilePath.isEmpty())
+            return;
+
+        const QFileInfo profileInfo(profilePath);
+        const QString absolutePath = QDir::cleanPath(profileInfo.absoluteFilePath());
+        for (const QString &existingPath : profilePaths)
+        {
+            if (QDir::cleanPath(QFileInfo(existingPath).absoluteFilePath()).compare(absolutePath, Qt::CaseInsensitive) == 0)
+                return;
+        }
+
+        profilePaths.append(profilePath);
+    };
+
+    appendProfile(info->getProfileLocation());
+
+    const QDir profileDir(PadderCommon::preferredProfileDir(settings));
+    const QFileInfoList profiles =
+        profileDir.entryInfoList({"*.amgp", "*.xml"}, QDir::Files | QDir::Readable, QDir::Name | QDir::IgnoreCase);
+    for (const QFileInfo &profile : profiles)
+        appendProfile(profile.absoluteFilePath());
+
+    settings->beginGroup("Controllers");
+    const QStringList controllerKeys = settings->allKeys();
+    const QRegularExpression profileKeyPattern(QStringLiteral("(ConfigFile\\d+|LastSelected)$"));
+    for (const QString &key : controllerKeys)
+    {
+        if (!profileKeyPattern.match(key).hasMatch())
+            continue;
+
+        const QString profilePath = settings->value(key).toString();
+        if (QFileInfo::exists(profilePath))
+            appendProfile(profilePath);
+    }
+    settings->endGroup();
+
+    std::sort(profilePaths.begin(), profilePaths.end(), [](const QString &left, const QString &right) {
+        return QString::localeAwareCompare(QFileInfo(left).completeBaseName(), QFileInfo(right).completeBaseName()) < 0;
+    });
+
+    for (const QString &profilePath : profilePaths)
+        addProfileChoice(profilePath);
+
+    const QString currentProfile = QDir::toNativeSeparators(info->getProfileLocation());
+    const int currentIndex = ui->profileComboBox->findData(currentProfile);
+    if (currentIndex >= 0)
+        ui->profileComboBox->setCurrentIndex(currentIndex);
+}
+
+void AddEditAutoProfileDialog::addProfileChoice(const QString &profilePath)
+{
+    const QString nativePath = QDir::toNativeSeparators(profilePath);
+    if (nativePath.isEmpty() || ui->profileComboBox->findData(nativePath) >= 0)
+        return;
+
+    QFileInfo profileInfo(profilePath);
+    const QString profileName = PadderCommon::getProfileName(profileInfo);
+    ui->profileComboBox->addItem(profileName, nativePath);
+    ui->profileComboBox->setItemData(ui->profileComboBox->count() - 1, nativePath, Qt::ToolTipRole);
 }
 
 void AddEditAutoProfileDialog::openApplicationBrowseDialog()

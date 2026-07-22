@@ -98,6 +98,8 @@ class AddEditAutoProfileDialog : public QDialog
     CapturedWindowInfoDialog *m_capture_window_info_dialog;
 #endif
 
+    void populateProfileChoices();
+    void addProfileChoice(const QString &profilePath);
     void check_profile_file();
     void check_executable_file();
 };
