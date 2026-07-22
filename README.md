@@ -14,6 +14,42 @@
 
 I, Blue Triangle, have literally ZERO KNOWLEDGE of C++ or Qt, so this code will remain in a separate fork until I somehow learn more about them. Anyone who finds this repository is free to use my slop code as long as the license permits.
 
+## Changelog
+
+GPT-5.6 made several improvements and fixed some major issues (at least for me),
+including:
+
+### 2026-07-23
+
+- **Automatic profile lock**: Added a status banner to every controller tab. Its lock
+  button can temporarily pause and resume automatic profile switching, so
+  manual profile and set changes can remain active when needed.
+- **Automatic profiles enabled by default**: Automatic profiles are now enabled,
+  synchronized, and initialized at startup on Windows and X11.
+- **Easier profile selection**: Added a profile selector to the automatic-profile
+  editor. It lists profiles from the preferred profile directory and recently
+  used controller profiles.
+- **Working Windows window capture**: The capture dialog now comes to the
+  foreground, and the selected application's full path is assigned correctly.
+- **Faster timed window capture**: The default delay is now three seconds (one second must be too short for everyone), the
+  maximum is 15 seconds, and AntiMicroX minimizes while waiting for capture.
+
+### 2026-07-22
+
+- **Prevention of multiple launches**: Improved single-instance handling across
+  Windows UAC boundaries. Instances running at different privilege levels can
+  now find the same local signal server, and AntiMicroX exits safely if it
+  cannot start the server.
+- **No more double-speed cursor while AntiMicroX is in the foreground**:
+  Preventing a second instance from processing the same controller input keeps
+  cursor movements from being applied twice.
+- **Clearer Windows diagnostics**: Added local-server and `SendInput` diagnostics
+  to make permission and input-injection failures easier to identify.
+
+---
+
+The rest of this README is unchanged from the original.
+
 ## Description
 
 AntiMicroX is a graphical program used to map gamepad keys to keyboard, mouse, scripts and macros. You can use this program to control any desktop application with a gamepad on Linux🐧 and Windows 🪟.  
