@@ -21,7 +21,7 @@ including:
 
 ### 2026-07-23
 
-- **Automatic profile lock**: Added a status banner to every controller tab. Its lock
+- **Automatic profile lock toggle switch**: Added a status banner to every controller tab. Its lock
   button can temporarily pause and resume automatic profile switching, so
   manual profile and set changes can remain active when needed.
 - **Automatic profiles enabled by default**: Automatic profiles are now enabled,
