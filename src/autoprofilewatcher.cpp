@@ -78,6 +78,7 @@ void AutoProfileWatcher::resetCurrentApplication()
 {
     currentApplication.clear();
     currentAppWindowTitle.clear();
+    getUniqeIDSetLocal().clear();
 }
 
 void AutoProfileWatcher::runAppCheck()

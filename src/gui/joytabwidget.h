@@ -97,7 +97,7 @@ class JoyTabWidget : public QWidget
     void namesDisplayChanged(bool status);
     void forceTabUnflash(JoyTabWidget *tabWidget);
     void mappingUpdated(QString mapping, InputDevice *device);
-    void autoProfilePauseToggleRequested();
+    void autoProfilePauseStateRequested(bool paused);
 
   public slots:
     void openConfigFileDialog();                // JoyTabSettings class

@@ -67,6 +67,7 @@
 #include <QResource>
 #include <QShowEvent>
 #include <QTextStream>
+#include <QTimer>
 #include <QTranslator>
 #include <QUrl>
 
@@ -107,18 +108,14 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
 #if defined(WITH_X11)
     if (QApplication::platformName() == QStringLiteral("xcb"))
     {
-        m_settings->setValue("AutoProfiles/AutoProfilesActive", "1");
         this->appWatcher = new AutoProfileWatcher(settings, this);
-        checkAutoProfileWatcherTimer();
     } else
     {
         this->appWatcher = nullptr;
         qDebug() << "appWatcher instance set to null pointer";
     }
 #elif defined(Q_OS_WIN)
-    m_settings->setValue("AutoProfiles/AutoProfilesActive", "1");
     this->appWatcher = new AutoProfileWatcher(settings, this);
-    checkAutoProfileWatcherTimer();
 #else
     this->appWatcher = 0;
 #endif
@@ -182,9 +179,11 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
     if (QApplication::platformName() == QStringLiteral("xcb"))
     {
         connect(appWatcher, &AutoProfileWatcher::foundApplicableProfile, this, &MainWindow::autoprofileLoad);
+        QTimer::singleShot(0, this, &MainWindow::initializeAutoProfiles);
     }
 #elif defined(Q_OS_WIN)
     connect(appWatcher, &AutoProfileWatcher::foundApplicableProfile, this, &MainWindow::autoprofileLoad);
+    QTimer::singleShot(0, this, &MainWindow::initializeAutoProfiles);
 #endif
 
 #ifdef Q_OS_WIN
@@ -1510,7 +1509,7 @@ void MainWindow::addJoyTab(InputDevice *device)
     JoyTabWidget *tabwidget = new JoyTabWidget(device, m_settings, this);
     tabwidget->setAutoProfileState(m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1",
                                    autoProfilePaused);
-    connect(tabwidget, &JoyTabWidget::autoProfilePauseToggleRequested, this, &MainWindow::toggleAutoProfilePause);
+    connect(tabwidget, &JoyTabWidget::autoProfilePauseStateRequested, this, &MainWindow::setAutoProfilePaused);
     QString joytabName = device->getSDLName();
     joytabName.append(" ").append(tr("(%1)").arg(device->getName()));
     ui->tabWidget->addTab(tabwidget, joytabName);
@@ -1678,16 +1677,39 @@ void MainWindow::checkAutoProfileWatcherTimer()
 #endif
 }
 
-void MainWindow::toggleAutoProfilePause()
+void MainWindow::initializeAutoProfiles()
+{
+#if defined(WITH_X11) || defined(Q_OS_WIN)
+    #if defined(WITH_X11)
+    if (QApplication::platformName() != QStringLiteral("xcb"))
+        return;
+    #endif
+
+    if (appWatcher == nullptr)
+        return;
+
+    autoProfilePaused = false;
+    m_settings->setValue("AutoProfiles/AutoProfilesActive", "1");
+    m_settings->sync();
+
+    appWatcher->syncProfileAssignment();
+    appWatcher->resetCurrentApplication();
+    checkAutoProfileWatcherTimer();
+#endif
+}
+
+void MainWindow::setAutoProfilePaused(bool paused)
 {
 #if defined(WITH_X11) || defined(Q_OS_WIN)
     const bool autoProfileActive = m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1";
     if (!autoProfileActive || appWatcher == nullptr)
+    {
+        checkAutoProfileWatcherTimer();
         return;
+    }
 
-    autoProfilePaused = !autoProfilePaused;
-    if (!autoProfilePaused)
-        appWatcher->resetCurrentApplication();
+    autoProfilePaused = paused;
+    appWatcher->resetCurrentApplication();
 
     checkAutoProfileWatcherTimer();
 #endif

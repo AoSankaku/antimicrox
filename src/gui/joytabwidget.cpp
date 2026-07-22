@@ -62,6 +62,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -151,12 +152,15 @@ JoyTabWidget::JoyTabWidget(InputDevice *joystick, AntiMicroSettings *settings, Q
     autoProfileLockButton = new QPushButton(autoProfileLockBanner);
     autoProfileLockButton->setObjectName(QString::fromUtf8("autoProfileLockButton"));
     autoProfileLockButton->setCursor(Qt::PointingHandCursor);
+    autoProfileLockButton->setCheckable(true);
     autoProfileLockButton->setFixedSize(44, 44);
     autoProfileLockButton->setIconSize(QSize(32, 32));
     QFont lockFont = autoProfileLockButton->font();
     lockFont.setPointSize(lockFont.pointSize() + 12);
     autoProfileLockButton->setFont(lockFont);
-    connect(autoProfileLockButton, &QPushButton::clicked, this, &JoyTabWidget::autoProfilePauseToggleRequested);
+    connect(autoProfileLockButton, &QPushButton::toggled, this, [this](bool paused) {
+        emit autoProfilePauseStateRequested(paused);
+    });
     autoProfileLockLayout->addWidget(autoProfileLockButton);
 
     autoProfileLockText = new QLabel(autoProfileLockBanner);
@@ -558,6 +562,9 @@ void JoyTabWidget::setAutoProfileState(bool active, bool paused)
     autoProfileActive = active;
     autoProfilePaused = active && paused;
     autoProfileLockBanner->setVisible(active);
+
+    const QSignalBlocker blocker(autoProfileLockButton);
+    autoProfileLockButton->setChecked(autoProfilePaused);
 
     if (!active)
         return;
