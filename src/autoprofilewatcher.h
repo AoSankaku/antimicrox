@@ -42,6 +42,7 @@ class AutoProfileWatcher : public QObject
 
     void startTimer();
     void stopTimer();
+    void resetCurrentApplication();
     static void disconnectWindowTimer();
     static AutoProfileWatcher *getAutoProfileWatcherInstance();
     QList<AutoProfileInfo *> *getCustomDefaults();

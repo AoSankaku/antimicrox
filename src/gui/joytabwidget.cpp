@@ -52,6 +52,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFileDialog>
+#include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -138,6 +139,36 @@ JoyTabWidget::JoyTabWidget(InputDevice *joystick, AntiMicroSettings *settings, Q
 
     verticalLayout->addLayout(configHorizontalLayout);
     verticalLayout->setStretchFactor(configHorizontalLayout, 1);
+
+    autoProfileLockBanner = new QFrame(this);
+    autoProfileLockBanner->setObjectName(QString::fromUtf8("autoProfileLockBanner"));
+    autoProfileLockBanner->setFrameShape(QFrame::StyledPanel);
+    autoProfileLockBanner->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    QHBoxLayout *autoProfileLockLayout = new QHBoxLayout(autoProfileLockBanner);
+    autoProfileLockLayout->setContentsMargins(10, 6, 10, 6);
+
+    autoProfileLockButton = new QPushButton(autoProfileLockBanner);
+    autoProfileLockButton->setObjectName(QString::fromUtf8("autoProfileLockButton"));
+    autoProfileLockButton->setCursor(Qt::PointingHandCursor);
+    autoProfileLockButton->setFixedSize(44, 44);
+    autoProfileLockButton->setIconSize(QSize(32, 32));
+    QFont lockFont = autoProfileLockButton->font();
+    lockFont.setPointSize(lockFont.pointSize() + 12);
+    autoProfileLockButton->setFont(lockFont);
+    connect(autoProfileLockButton, &QPushButton::clicked, this, &JoyTabWidget::autoProfilePauseToggleRequested);
+    autoProfileLockLayout->addWidget(autoProfileLockButton);
+
+    autoProfileLockText = new QLabel(autoProfileLockBanner);
+    QFont lockTextFont = autoProfileLockText->font();
+    lockTextFont.setBold(true);
+    lockTextFont.setPointSize(lockTextFont.pointSize() + 1);
+    autoProfileLockText->setFont(lockTextFont);
+    autoProfileLockText->setWordWrap(true);
+    autoProfileLockLayout->addWidget(autoProfileLockText, 1);
+
+    verticalLayout->addWidget(autoProfileLockBanner);
+    setAutoProfileState(false, false);
 
     spacer2 = new QSpacerItem(20, 5, QSizePolicy::Fixed, QSizePolicy::Fixed);
     verticalLayout->addItem(spacer2);
@@ -520,6 +551,40 @@ bool JoyTabWidget::isKeypadUnlocked()
         return false;
 
     return m_settings->value("AttachNumKeypad", false).toBool();
+}
+
+void JoyTabWidget::setAutoProfileState(bool active, bool paused)
+{
+    autoProfileActive = active;
+    autoProfilePaused = active && paused;
+    autoProfileLockBanner->setVisible(active);
+
+    if (!active)
+        return;
+
+    const QString iconName = autoProfilePaused ? QStringLiteral("changes-allow") : QStringLiteral("changes-prevent");
+    const QIcon lockIcon = QIcon::fromTheme(iconName);
+    autoProfileLockButton->setIcon(QIcon());
+    autoProfileLockButton->setText(QString());
+    if (!lockIcon.isNull())
+    {
+        autoProfileLockButton->setIcon(lockIcon);
+    } else
+    {
+        autoProfileLockButton->setText(autoProfilePaused ? QString::fromUtf8("🔓") : QString::fromUtf8("🔒"));
+    }
+
+    const QString message =
+        autoProfilePaused
+            ? tr("Automatic profile switching is temporarily paused. Manual profile and set changes will stay active.")
+            : tr("Automatic profiles are active. Profile and set changes may be overridden.");
+    const QString action = autoProfilePaused ? tr("Resume automatic profile switching")
+                                             : tr("Temporarily pause automatic profile switching");
+    autoProfileLockText->setText(message);
+    autoProfileLockBanner->setAccessibleName(message);
+    autoProfileLockBanner->setToolTip(action);
+    autoProfileLockButton->setAccessibleName(action);
+    autoProfileLockButton->setToolTip(action);
 }
 
 void JoyTabWidget::openConfigFileDialog()
@@ -1560,6 +1625,8 @@ void JoyTabWidget::removeProfileEditNotification()
 
 void JoyTabWidget::retranslateUi()
 {
+    setAutoProfileState(autoProfileActive, autoProfilePaused);
+
     removeButton->setText(tr("Remove"));
     removeButton->setToolTip(tr("Remove configuration from recent list."));
 

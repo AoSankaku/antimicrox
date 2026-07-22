@@ -1506,6 +1506,9 @@ void MainWindow::removeJoyTab(SDL_JoystickID deviceID)
 void MainWindow::addJoyTab(InputDevice *device)
 {
     JoyTabWidget *tabwidget = new JoyTabWidget(device, m_settings, this);
+    tabwidget->setAutoProfileState(m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1",
+                                   autoProfilePaused);
+    connect(tabwidget, &JoyTabWidget::autoProfilePauseToggleRequested, this, &MainWindow::toggleAutoProfilePause);
     QString joytabName = device->getSDLName();
     joytabName.append(" ").append(tr("(%1)").arg(device->getName()));
     ui->tabWidget->addTab(tabwidget, joytabName);
@@ -1650,8 +1653,18 @@ void MainWindow::checkAutoProfileWatcherTimer()
         return;
     #endif
 
-    QString autoProfileActive = m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString();
-    if (autoProfileActive == "1")
+    const bool autoProfileActive = m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1";
+    if (!autoProfileActive)
+        autoProfilePaused = false;
+
+    for (int i = 0; i < ui->tabWidget->count(); i++)
+    {
+        JoyTabWidget *tabwidget = qobject_cast<JoyTabWidget *>(ui->tabWidget->widget(i));
+        if (tabwidget != nullptr)
+            tabwidget->setAutoProfileState(autoProfileActive, autoProfilePaused);
+    }
+
+    if (autoProfileActive && !autoProfilePaused)
     {
         appWatcher->startTimer();
         qDebug() << "Started timer for appWatcher";
@@ -1660,6 +1673,21 @@ void MainWindow::checkAutoProfileWatcherTimer()
         appWatcher->stopTimer();
         qDebug() << "Stopped timer for appWatcher";
     }
+#endif
+}
+
+void MainWindow::toggleAutoProfilePause()
+{
+#if defined(WITH_X11) || defined(Q_OS_WIN)
+    const bool autoProfileActive = m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1";
+    if (!autoProfileActive || appWatcher == nullptr)
+        return;
+
+    autoProfilePaused = !autoProfilePaused;
+    if (!autoProfilePaused)
+        appWatcher->resetCurrentApplication();
+
+    checkAutoProfileWatcherTimer();
 #endif
 }
 

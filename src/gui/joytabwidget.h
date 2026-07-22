@@ -41,6 +41,7 @@ class QAction;
 class QMenu;
 class QStackedWidget;
 class QSettings;
+class QFrame;
 
 /**
  * @brief Widget containing tab representing selected joystick.
@@ -61,6 +62,7 @@ class JoyTabWidget : public QWidget
     void checkHideEmptyOption();
     void refreshHelperThread();
     void convToUniqueIDControllerGroupSett(QSettings *sett, QString guidControllerSett, QString uniqueControllerSett);
+    void setAutoProfileState(bool active, bool paused);
 
     bool isDisplayingNames();
     bool discardUnsavedProfileChanges();
@@ -95,6 +97,7 @@ class JoyTabWidget : public QWidget
     void namesDisplayChanged(bool status);
     void forceTabUnflash(JoyTabWidget *tabWidget);
     void mappingUpdated(QString mapping, InputDevice *device);
+    void autoProfilePauseToggleRequested();
 
   public slots:
     void openConfigFileDialog();                // JoyTabSettings class
@@ -156,6 +159,9 @@ class JoyTabWidget : public QWidget
     QVBoxLayout *verticalLayout;
     QHBoxLayout *configHorizontalLayout;
     QLabel *batteryIcon;
+    QFrame *autoProfileLockBanner;
+    QPushButton *autoProfileLockButton;
+    QLabel *autoProfileLockText;
     QPushButton *removeButton;
     QPushButton *loadButton;
     QPushButton *saveButton;
@@ -222,6 +228,8 @@ class JoyTabWidget : public QWidget
     AntiMicroSettings *m_settings;
     int comboBoxIndex = 0;
     bool hideEmptyButtons = false;
+    bool autoProfileActive = false;
+    bool autoProfilePaused = false;
     QString oldProfileName;
 
     JoyTabWidgetHelper tabHelper;

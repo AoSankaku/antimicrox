@@ -145,6 +145,7 @@ class MainWindow : public QMainWindow
     void propogateMappingUpdate(QString mapping, InputDevice *device);
     void autoprofileLoad(AutoProfileInfo *info); // MainConfiguration class
     void checkAutoProfileWatcherTimer();         // MainConfiguration class
+    void toggleAutoProfilePause();
 
   private:
     /**
@@ -174,6 +175,7 @@ class MainWindow : public QMainWindow
     bool signalDisconnect;
     bool showTrayIcon;
     bool m_graphical;
+    bool autoProfilePaused = false;
 
 #ifdef CHECK_FOR_UPDATES
     QNetworkAccessManager m_network_manager; // Used for checking updates

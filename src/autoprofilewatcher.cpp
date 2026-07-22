@@ -74,6 +74,12 @@ void AutoProfileWatcher::startTimer() { checkWindowTimer.start(CHECKTIME); }
 
 void AutoProfileWatcher::stopTimer() { checkWindowTimer.stop(); }
 
+void AutoProfileWatcher::resetCurrentApplication()
+{
+    currentApplication.clear();
+    currentAppWindowTitle.clear();
+}
+
 void AutoProfileWatcher::runAppCheck()
 {
     qDebug() << qApp->applicationFilePath();
