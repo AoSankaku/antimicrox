@@ -16,6 +16,8 @@ Due to lack of time and shifting focus of its developer AntiMicroX is looking fo
 For now, this app will have only limited support and will not get any new features (unless coded by external contributors).   
 [Link to discussion](https://github.com/AntiMicroX/antimicrox/discussions/1171)
 
+I, Blue Triangle, have literally ZERO KNOWLEDGE of C++ or Qt, so this code will remain in a separate fork until I somehow learn more about them. Anyone who finds this repository is free to use my slop code as long as the license permits.
+
 ## Description
 
 AntiMicroX is a graphical program used to map gamepad keys to keyboard, mouse, scripts and macros. You can use this program to control any desktop application with a gamepad on Linux🐧 and Windows 🪟.  
