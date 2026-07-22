@@ -72,6 +72,12 @@ included with the source code if you would like to read the terms of the license
 The license can also be found online at
 http://www.gnu.org/licenses/gpl.txt
 
+### Fork notice
+
+This repository is an unofficial fork of AntiMicroX. It contains modifications
+made beginning in July 2026. AntiMicroX and this modified version are distributed
+under the GNU General Public License version 3. See [LICENSE](LICENSE) for details.
+
 ## Installation
 
 ### Windows
