@@ -107,6 +107,7 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
 #if defined(WITH_X11)
     if (QApplication::platformName() == QStringLiteral("xcb"))
     {
+        m_settings->setValue("AutoProfiles/AutoProfilesActive", "1");
         this->appWatcher = new AutoProfileWatcher(settings, this);
         checkAutoProfileWatcherTimer();
     } else
@@ -115,6 +116,7 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
         qDebug() << "appWatcher instance set to null pointer";
     }
 #elif defined(Q_OS_WIN)
+    m_settings->setValue("AutoProfiles/AutoProfilesActive", "1");
     this->appWatcher = new AutoProfileWatcher(settings, this);
     checkAutoProfileWatcherTimer();
 #else
