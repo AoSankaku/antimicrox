@@ -330,6 +330,7 @@ void MainWindow::makeJoystickTabs()
 
         InputDevice *joystick = iter.value();
         JoyTabWidget *tabwidget = new JoyTabWidget(joystick, m_settings, this);
+        configureAutoProfileUi(tabwidget);
         QString joytabName = joystick->getSDLName();
         joytabName.append(" ").append(tr("(%1)").arg(joystick->getName()));
         ui->tabWidget->addTab(tabwidget, joytabName);
@@ -376,6 +377,7 @@ void MainWindow::fillButtonsMap(QMap<SDL_JoystickID, InputDevice *> *joysticks)
         InputDevice *joystick = iter.value();
 
         JoyTabWidget *tabwidget = new JoyTabWidget(joystick, m_settings, this);
+        configureAutoProfileUi(tabwidget);
         QString joytabName = joystick->getSDLName();
         joytabName.append(" ").append(tr("(%1)").arg(joystick->getName()));
         ui->tabWidget->addTab(tabwidget, joytabName);
@@ -1442,6 +1444,7 @@ void MainWindow::testMappingUpdateNow(int index, InputDevice *device)
     }
 
     JoyTabWidget *tabwidget = new JoyTabWidget(device, m_settings, this);
+    configureAutoProfileUi(tabwidget);
     QString joytabName = device->getSDLName();
     joytabName.append(" ").append(tr("(%1)").arg(device->getName()));
     ui->tabWidget->insertTab(index, tabwidget, joytabName);
@@ -1507,9 +1510,7 @@ void MainWindow::removeJoyTab(SDL_JoystickID deviceID)
 void MainWindow::addJoyTab(InputDevice *device)
 {
     JoyTabWidget *tabwidget = new JoyTabWidget(device, m_settings, this);
-    tabwidget->setAutoProfileState(m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1",
-                                   autoProfilePaused);
-    connect(tabwidget, &JoyTabWidget::autoProfilePauseStateRequested, this, &MainWindow::setAutoProfilePaused);
+    configureAutoProfileUi(tabwidget);
     QString joytabName = device->getSDLName();
     joytabName.append(" ").append(tr("(%1)").arg(device->getName()));
     ui->tabWidget->addTab(tabwidget, joytabName);
@@ -1540,6 +1541,13 @@ void MainWindow::addJoyTab(InputDevice *device)
     }
 
     ui->stackedWidget->setCurrentIndex(1);
+}
+
+void MainWindow::configureAutoProfileUi(JoyTabWidget *tabwidget)
+{
+    const bool autoProfileActive = m_settings->value("AutoProfiles/AutoProfilesActive", "0").toString() == "1";
+    tabwidget->setAutoProfileState(autoProfileActive, autoProfilePaused);
+    connect(tabwidget, &JoyTabWidget::autoProfilePauseStateRequested, this, &MainWindow::setAutoProfilePaused);
 }
 
 void MainWindow::autoprofileLoad(AutoProfileInfo *info)

@@ -149,6 +149,8 @@ class MainWindow : public QMainWindow
     void setAutoProfilePaused(bool paused);
 
   private:
+    void configureAutoProfileUi(JoyTabWidget *tabwidget);
+
     /**
      * @brief Check state of batteries in controllers and notify user (only when powerLevSDL matches current battery level)
      */
