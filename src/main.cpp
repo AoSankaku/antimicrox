@@ -295,11 +295,23 @@ int main(int argc, char *argv[])
 
         if (!socket.waitForConnected(3000))
         {
+            if (socket.error() == QLocalSocket::ServerNotFoundError)
+            {
+                qDebug() << "No existing AntiMicroX signal server was found.";
+            } else if (socket.error() == QLocalSocket::SocketAccessError)
+            {
+                qWarning() << "Access to the existing AntiMicroX signal server was denied.";
+#if defined(Q_OS_WIN)
+                qWarning() << "This may indicate an incompatible server created across a Windows UAC boundary.";
+#endif
+            } else
+            {
+                qWarning() << "Could not connect to the existing AntiMicroX signal server.";
+            }
             qDebug() << "Socket's state: " << socket.state();
             qDebug() << "Server name: " << socket.serverName();
             qDebug() << "Socket descriptor: " << socket.socketDescriptor();
-            qDebug() << "The connection hasn't been established: \nerror text -> " << socket.error() << "\nerror text 2 ->"
-                     << socket.errorString();
+            qDebug() << "Socket error:" << socket.error() << "Error text:" << socket.errorString();
         } else
         {
             qDebug() << "Socket connected";
@@ -377,7 +389,18 @@ int main(int argc, char *argv[])
     }
 
     LocalAntiMicroServer *localServer = new LocalAntiMicroServer();
-    localServer->startLocalServer();
+    if (!localServer->startLocalServer())
+    {
+        delete localServer;
+        localServer = nullptr;
+
+        deleteInputDevices(joysticks);
+        delete joysticks;
+        joysticks = nullptr;
+
+        delete appLogger;
+        return EXIT_FAILURE;
+    }
 
 #if defined(Q_OS_WIN)
     qApp->setStyle("fusion");

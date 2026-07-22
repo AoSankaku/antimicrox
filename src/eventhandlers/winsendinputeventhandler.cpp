@@ -15,13 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QDebug>
 #include <QVarLengthArray>
+#include <atomic>
 #include <cmath>
 #include <qt_windows.h>
 
 #include "winsendinputeventhandler.h"
 #include <antkeymapper.h>
 #include <winextras.h>
+
+namespace
+{
+void sendInputWithDiagnostics(UINT inputCount, INPUT *inputs)
+{
+    static std::atomic_flag failureLogged = ATOMIC_FLAG_INIT;
+
+    SetLastError(ERROR_SUCCESS);
+    const UINT insertedCount = SendInput(inputCount, inputs, sizeof(INPUT));
+    const DWORD errorCode = insertedCount == inputCount ? ERROR_SUCCESS : GetLastError();
+
+    if (insertedCount != inputCount && !failureLogged.test_and_set(std::memory_order_relaxed))
+    {
+        qWarning() << "SendInput inserted" << insertedCount << "of" << inputCount
+                   << "requested events. GetLastError:" << errorCode
+                   << "UIPI blocking does not provide a reliable error code. Further failures will not be logged.";
+    }
+}
+} // namespace
 
 WinSendInputEventHandler::WinSendInputEventHandler(QObject *parent)
     : BaseEventHandler(parent)
@@ -49,7 +70,7 @@ void WinSendInputEventHandler::sendKeyboardEvent(JoyButtonSlot *slot, bool press
 
     temp[0].ki.wVk = code;
     temp[0].ki.dwFlags = pressed ? tempflags : (tempflags | KEYEVENTF_KEYUP); // 0 for key press
-    SendInput(1, temp, sizeof(INPUT));
+    sendInputWithDiagnostics(1, temp);
 }
 
 void WinSendInputEventHandler::sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed)
@@ -93,7 +114,7 @@ void WinSendInputEventHandler::sendMouseButtonEvent(JoyButtonSlot *slot, bool pr
         temp[0].mi.mouseData = XBUTTON2;
     }
 
-    SendInput(1, temp, sizeof(INPUT));
+    sendInputWithDiagnostics(1, temp);
 }
 
 void WinSendInputEventHandler::sendMouseEvent(int xDis, int yDis)
@@ -104,7 +125,7 @@ void WinSendInputEventHandler::sendMouseEvent(int xDis, int yDis)
     temp[0].mi.dwFlags = MOUSEEVENTF_MOVE;
     temp[0].mi.dx = xDis;
     temp[0].mi.dy = yDis;
-    SendInput(1, temp, sizeof(INPUT));
+    sendInputWithDiagnostics(1, temp);
 }
 
 QString WinSendInputEventHandler::getName() { return QString("SendInput"); }
@@ -124,7 +145,7 @@ void WinSendInputEventHandler::sendMouseSpringEvent(int xDis, int yDis, int widt
         int fy = ceil(yDis * (65535.0 / static_cast<double>(height)));
         temp[0].mi.dx = fx;
         temp[0].mi.dy = fy;
-        SendInput(1, temp, sizeof(INPUT));
+        sendInputWithDiagnostics(1, temp);
     }
 }
 
@@ -189,7 +210,7 @@ void WinSendInputEventHandler::sendTextEntryEvent(QString maintext)
                     tempBuffer[j].ki.dwFlags = tempflags;
                 }
 
-                SendInput(j, tempBuffer.data(), sizeof(INPUT));
+                sendInputWithDiagnostics(j, tempBuffer.data());
 
                 j = 0;
                 memset(tempBuffer.data(), 0, sizeof(INPUT) * inputCount);
@@ -210,7 +231,7 @@ void WinSendInputEventHandler::sendTextEntryEvent(QString maintext)
                     tempBuffer[j].ki.dwFlags = tempflags | KEYEVENTF_KEYUP;
                 }
 
-                SendInput(j, tempBuffer.data(), sizeof(INPUT));
+                sendInputWithDiagnostics(j, tempBuffer.data());
             }
         }
     }

@@ -30,36 +30,45 @@ LocalAntiMicroServer::LocalAntiMicroServer(QObject *parent)
     localServer = new QLocalServer(this);
 }
 
-void LocalAntiMicroServer::startLocalServer()
+bool LocalAntiMicroServer::startLocalServer()
 {
-    if (localServer != nullptr)
+    if (localServer == nullptr)
     {
-        bool removedServer = QLocalServer::removeServer(PadderCommon::localSocketKey);
-
-        if (!removedServer)
-            qDebug() << "Couldn't remove local server named " << PadderCommon::localSocketKey;
-
-        if (localServer->maxPendingConnections() != 1)
-            localServer->setMaxPendingConnections(1);
-
-        if (!localServer->isListening())
-        {
-            if (!localServer->listen(PadderCommon::localSocketKey))
-            {
-                QString message("Could not start signal server. Profiles cannot be reloaded\n");
-                message.append("from command-line");
-                PRINT_STDERR() << tr(message.toStdString().c_str()) << "\n";
-                qDebug() << "Could not start signal server. Profiles cannot be reloaded\n"
-                         << " \nfrom command-line\n " << tr(message.toStdString().c_str());
-            } else
-            {
-                connect(localServer, &QLocalServer::newConnection, this, &LocalAntiMicroServer::handleOutsideConnection);
-            }
-        }
-    } else
-    {
-        qDebug() << "LocalAntiMicroXServer::startLocalServer(): localServer is nullptr";
+        qCritical() << "LocalAntiMicroXServer::startLocalServer(): localServer is nullptr";
+        return false;
     }
+
+    if (localServer->isListening())
+        return true;
+
+    const bool removedServer = QLocalServer::removeServer(PadderCommon::localSocketKey);
+
+    if (!removedServer)
+        qDebug() << "Couldn't remove local server named " << PadderCommon::localSocketKey;
+
+    if (localServer->maxPendingConnections() != 1)
+        localServer->setMaxPendingConnections(1);
+
+#if defined(Q_OS_WIN)
+    // Allow the same Windows user to reach an elevated server from a non-elevated process.
+    // This must be configured before listen() creates the named pipe.
+    localServer->setSocketOptions(QLocalServer::UserAccessOption);
+#endif
+
+    connect(localServer, &QLocalServer::newConnection, this, &LocalAntiMicroServer::handleOutsideConnection,
+            Qt::UniqueConnection);
+
+    if (!localServer->listen(PadderCommon::localSocketKey))
+    {
+        const QString message = tr("Could not start the signal server. AntiMicroX will exit to avoid processing "
+                                   "input in more than one instance.");
+        PRINT_STDERR() << message << "\n";
+        qCritical() << message << "Server error:" << localServer->serverError()
+                    << "Error text:" << localServer->errorString();
+        return false;
+    }
+
+    return true;
 }
 
 void LocalAntiMicroServer::handleOutsideConnection()
