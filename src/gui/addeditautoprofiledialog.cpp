@@ -34,6 +34,7 @@
     #include "capturedwindowinfodialog.h"
     #include "winappprofiletimerdialog.h"
     #include "winextras.h"
+    #include <qt_windows.h>
 #endif
 
 #include <QApplication>
@@ -47,6 +48,23 @@
 #include <QThread>
 
 #include <algorithm>
+
+#ifdef Q_OS_WIN
+namespace {
+void showInForeground(QWidget *window)
+{
+    window->show();
+    window->raise();
+    window->activateWindow();
+
+    const HWND windowHandle = reinterpret_cast<HWND>(window->winId());
+    ShowWindow(windowHandle, SW_RESTORE);
+    SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetWindowPos(windowHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetForegroundWindow(windowHandle);
+}
+} // namespace
+#endif
 
 AddEditAutoProfileDialog::AddEditAutoProfileDialog(AutoProfileInfo *info, AntiMicroSettings *settings,
                                                    QList<InputDevice *> *devices, QList<QString> &reservedUniques, bool edit,
@@ -569,6 +587,6 @@ void AddEditAutoProfileDialog::captureWindowsApplicationPath()
     m_capture_window_info_dialog = new CapturedWindowInfoDialog(this);
     connect(m_capture_window_info_dialog, &CapturedWindowInfoDialog::accepted, this,
             &AddEditAutoProfileDialog::callWindowPropAssignment);
-    m_capture_window_info_dialog->show();
+    showInForeground(m_capture_window_info_dialog);
 }
 #endif
