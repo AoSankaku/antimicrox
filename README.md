@@ -10,11 +10,7 @@
 8. [AntiMicroX Profiles](#antimicrox-profiles)
 9. [Support](#support)
 
-## ❗Looking for a new maintainer❗
-
-Due to lack of time and shifting focus of its developer AntiMicroX is looking for a new maintainer willing to continue development.   
-For now, this app will have only limited support and will not get any new features (unless coded by external contributors).   
-[Link to discussion](https://github.com/AntiMicroX/antimicrox/discussions/1171)
+## ❗Important Notice
 
 I, Blue Triangle, have literally ZERO KNOWLEDGE of C++ or Qt, so this code will remain in a separate fork until I somehow learn more about them. Anyone who finds this repository is free to use my slop code as long as the license permits.
 
