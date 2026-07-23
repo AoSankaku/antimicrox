@@ -91,6 +91,7 @@ class MainWindow : public QMainWindow
     void joystickRefreshRequested();
     void readConfig(int index); // MainConfiguration class
     void mappingUpdated(QString mapping, InputDevice *device);
+    void controllerInputEnabledChanged(InputDevice *device, bool enabled);
 
   public slots:
     void checkEachTenMinutesBattery(QMap<SDL_JoystickID, InputDevice *> *joysticks);
@@ -115,6 +116,7 @@ class MainWindow : public QMainWindow
 
   private slots:
     void refreshTrayIconMenu();
+    void refreshControllerMenu();
     void trayIconClickAction(QSystemTrayIcon::ActivationReason reason);
     void mainMenuChange(QMenu *tempMenu);
     void disableFlashActions();
@@ -150,6 +152,8 @@ class MainWindow : public QMainWindow
 
   private:
     void configureAutoProfileUi(JoyTabWidget *tabwidget);
+    void initializeControllerInputState(InputDevice *device);
+    QString controllerInputSettingsKey(InputDevice *device) const;
 
     /**
      * @brief Check state of batteries in controllers and notify user (only when powerLevSDL matches current battery level)

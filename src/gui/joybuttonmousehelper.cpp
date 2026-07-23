@@ -19,11 +19,16 @@
 #include "joybuttonmousehelper.h"
 
 #include "globalvariables.h"
+#include "inputdevice.h"
 #include "joybuttontypes/joybutton.h"
+#include "mouseinputselection.h"
+#include "setjoystick.h"
 
 #include <QDebug>
 #include <QList>
 #include <QThread>
+
+#include <vector>
 
 JoyButtonMouseHelper::JoyButtonMouseHelper(QObject *parent)
     : QObject(parent)
@@ -77,13 +82,21 @@ void JoyButtonMouseHelper::mouseEvent()
         !JoyButton::hasSpringEvents(JoyButton::getSpringXSpeeds(), JoyButton::getSpringYSpeeds()))
     {
         QList<JoyButton *> *buttonList = JoyButton::getPendingMouseButtons();
-        QListIterator<JoyButton *> iter(*buttonList);
+        std::vector<MouseInputCandidate> candidates;
+        candidates.reserve(buttonList->size());
 
-        while (iter.hasNext())
+        for (JoyButton *button : *buttonList)
         {
-            JoyButton *temp = iter.next();
-            temp->mouseEvent();
+            SetJoystick *parentSet = button != nullptr ? button->getParentSet() : nullptr;
+            InputDevice *source = parentSet != nullptr ? parentSet->getInputDevice() : nullptr;
+            const bool enabled = source != nullptr && source->isControllerInputEnabled();
+            candidates.push_back({button, source, enabled});
         }
+
+        const std::vector<JoyButton *> selectedButtons = selectMouseInputButtons(candidates);
+
+        for (JoyButton *button : selectedButtons)
+            button->mouseEvent();
     }
 
     moveMouseCursor();

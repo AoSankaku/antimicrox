@@ -4458,6 +4458,31 @@ the option in Windows.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/gui/mainwindow.ui" line="235"/>
+        <source>&amp;Controller</source>
+        <translation>コントローラー(&amp;C)</translation>
+    </message>
+    <message>
+        <location filename="../../../src/gui/mainwindow.cpp" line="708"/>
+        <source>Controller input</source>
+        <translation>コントローラー入力</translation>
+    </message>
+    <message>
+        <location filename="../../../src/gui/mainwindow.cpp" line="719"/>
+        <source>No controllers connected</source>
+        <translation>コントローラーが接続されていません</translation>
+    </message>
+    <message>
+        <location filename="../../../src/gui/mainwindow.cpp" line="731"/>
+        <source>Enable all mapped input from this controller</source>
+        <translation>このコントローラーに割り当てられたすべての入力を有効にします</translation>
+    </message>
+    <message>
+        <location filename="../../../src/gui/mainwindow.cpp" line="733"/>
+        <source>Checked controllers are active. Input from multiple checked controllers is combined.</source>
+        <translation>チェックしたコントローラーがアクティブになります。複数をチェックした場合は入力を合算します。</translation>
+    </message>
+    <message>
         <location filename="../../../src/gui/mainwindow.ui" line="224"/>
         <source>&amp;Options</source>
         <translation>オプション(&amp;O)</translation>

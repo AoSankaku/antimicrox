@@ -26,6 +26,8 @@
 
 #include <SDL2/SDL_joystick.h>
 
+#include <atomic>
+
 class AntiMicroSettings;
 class SetJoystick;
 class QXmlStreamReader;
@@ -70,6 +72,7 @@ class InputDevice : public QObject
     SetJoystick *getSetJoystick(int index);
     void removeControlStick(int index);
     bool isActive();
+    bool isControllerInputEnabled() const;
     int getButtonDownCount();
 
     virtual QString getXmlName() const = 0;
@@ -222,6 +225,7 @@ class InputDevice : public QObject
     void changeSetVDPadButtonAssociation(int button_index, int dpad_index, int originset, int newset,
                                          int mode); // InputDeviceVDPad class
     void setDeviceKeyPressTime(int newPressTime);   // .., unsigned
+    void setControllerInputEnabled(bool enabled);
     void profileEdited();
     void setProfileName(QString value);
     void haltServices();
@@ -284,6 +288,7 @@ class InputDevice : public QObject
     int buttonDownCount;
     SDL_JoystickID joystickID;
     bool deviceEdited;
+    std::atomic_bool controllerInputEnabled;
 
     bool keyRepeatEnabled;
     int keyRepeatDelay;

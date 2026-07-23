@@ -711,6 +711,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_JOYBUTTONUP: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jbutton.which);
 
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
+
             if (joy != nullptr)
             {
                 SetJoystick *set = joy->getActiveSetJoystick();
@@ -731,6 +734,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
         }
         case SDL_JOYAXISMOTION: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jaxis.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -756,6 +762,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_JOYHATMOTION: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jhat.which);
 
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
+
             if (joy != nullptr)
             {
                 SetJoystick *set = joy->getActiveSetJoystick();
@@ -777,6 +786,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
 
         case SDL_CONTROLLERAXISMOTION: {
             InputDevice *joy = trackcontrollers.value(event.caxis.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -809,6 +821,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
 #if SDL_VERSION_ATLEAST(2, 0, 14)
         case SDL_CONTROLLERSENSORUPDATE: {
             InputDevice *joy = trackcontrollers.value(event.caxis.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -845,6 +860,9 @@ void InputDaemon::firstInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_CONTROLLERBUTTONDOWN:
         case SDL_CONTROLLERBUTTONUP: {
             InputDevice *joy = trackcontrollers.value(event.cbutton.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -1047,6 +1065,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_JOYBUTTONUP: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jbutton.which);
 
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
+
             if (joy != nullptr)
             {
                 SetJoystick *set = joy->getActiveSetJoystick();
@@ -1070,6 +1091,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
 
         case SDL_JOYAXISMOTION: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jaxis.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -1097,6 +1121,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_JOYHATMOTION: {
             InputDevice *joy = getTrackjoysticksLocal().value(event.jhat.which);
 
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
+
             if (joy != nullptr)
             {
                 SetJoystick *set = joy->getActiveSetJoystick();
@@ -1121,6 +1148,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_CONTROLLERAXISMOTION: {
             InputDevice *joy = trackcontrollers.value(event.caxis.which);
 
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
+
             if (joy != nullptr)
             {
                 SetJoystick *set = joy->getActiveSetJoystick();
@@ -1141,6 +1171,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
 #if SDL_VERSION_ATLEAST(2, 0, 14)
         case SDL_CONTROLLERSENSORUPDATE: {
             InputDevice *joy = trackcontrollers.value(event.csensor.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -1169,6 +1202,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
         case SDL_CONTROLLERBUTTONDOWN:
         case SDL_CONTROLLERBUTTONUP: {
             InputDevice *joy = trackcontrollers.value(event.cbutton.which);
+
+            if (joy != nullptr && !joy->isControllerInputEnabled())
+                break;
 
             if (joy != nullptr)
             {
@@ -1224,6 +1260,9 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
         while (activeDevIter.hasNext())
         {
             InputDevice *tempDevice = activeDevIter.next().value();
+            if (!tempDevice->isControllerInputEnabled())
+                continue;
+
             tempDevice->activatePossibleControlStickEvents();
             tempDevice->activatePossibleAxisEvents();
             tempDevice->activatePossibleSensorEvents();
@@ -1277,6 +1316,23 @@ void InputDaemon::resetActiveButtonMouseDistances()
     pollResetTimer.stop();
 
     JoyButton::resetActiveButtonMouseDistances(JoyButton::getMouseHelper());
+}
+
+void InputDaemon::setControllerInputEnabled(InputDevice *device, bool enabled)
+{
+    if (device == nullptr || !m_joysticks->values().contains(device))
+        return;
+
+    device->setControllerInputEnabled(enabled);
+
+    if (!enabled)
+    {
+        SetJoystick *activeSet = device->getActiveSetJoystick();
+        if (activeSet != nullptr)
+            activeSet->release();
+
+        JoyButton::resetActiveButtonMouseDistances(JoyButton::getMouseHelper());
+    }
 }
 
 void InputDaemon::updatePollResetRate(int tempPollRate)

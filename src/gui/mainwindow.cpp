@@ -51,6 +51,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QByteArray>
 #include <QCloseEvent>
 #include <QDebug>
 #include <QDesktopServices>
@@ -62,6 +63,7 @@
 #include <QLocalServer>
 #include <QMapIterator>
 #include <QMessageBox>
+#include <QMutexLocker>
 #include <QPointer>
 #include <QRegularExpression>
 #include <QResource>
@@ -125,6 +127,9 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
 
     m_joysticks = joysticks;
 
+    for (InputDevice *device : m_joysticks->values())
+        initializeControllerInputState(device);
+
     if (showTrayIcon)
     {
         trayIconMenu = new QMenu(this);
@@ -165,6 +170,8 @@ MainWindow::MainWindow(QMap<SDL_JoystickID, InputDevice *> *joysticks, CommandLi
 
     QMenu *menuPointerOptions = ui->menuOptions;
     connect(ui->menuOptions, &QMenu::aboutToShow, this, [this, menuPointerOptions] { mainMenuChange(menuPointerOptions); });
+    ui->menuController->setToolTipsVisible(true);
+    connect(ui->menuController, &QMenu::aboutToShow, this, &MainWindow::refreshControllerMenu);
 
     connect(ui->actionKeyValue, &QAction::triggered, this, &MainWindow::openKeyCheckerDialog);
     connect(ui->actionAbout_Qt, &QAction::triggered, qApp, &QApplication::aboutQt);
@@ -329,6 +336,7 @@ void MainWindow::makeJoystickTabs()
         iter.next();
 
         InputDevice *joystick = iter.value();
+        initializeControllerInputState(joystick);
         JoyTabWidget *tabwidget = new JoyTabWidget(joystick, m_settings, this);
         configureAutoProfileUi(tabwidget);
         QString joytabName = joystick->getSDLName();
@@ -375,6 +383,7 @@ void MainWindow::fillButtonsMap(QMap<SDL_JoystickID, InputDevice *> *joysticks)
         iter.next();
 
         InputDevice *joystick = iter.value();
+        initializeControllerInputState(joystick);
 
         JoyTabWidget *tabwidget = new JoyTabWidget(joystick, m_settings, this);
         configureAutoProfileUi(tabwidget);
@@ -671,6 +680,77 @@ void MainWindow::refreshTrayIconMenu()
     {
         hideAction->setEnabled(true);
         restoreAction->setEnabled(false);
+    }
+}
+
+QString MainWindow::controllerInputSettingsKey(InputDevice *device) const
+{
+    if (device == nullptr)
+        return QString();
+
+    QString identifier = device->getStringIdentifier();
+    if (identifier.isEmpty())
+        identifier = device->getSDLName();
+
+    const QByteArray encodedIdentifier =
+        identifier.toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+    return QStringLiteral("ControllerInput/%1/Enabled").arg(QString::fromLatin1(encodedIdentifier));
+}
+
+void MainWindow::initializeControllerInputState(InputDevice *device)
+{
+    const QString settingsKey = controllerInputSettingsKey(device);
+    if (device != nullptr && !settingsKey.isEmpty())
+    {
+        QMutexLocker locker(m_settings->getLock());
+        device->setControllerInputEnabled(m_settings->value(settingsKey, true).toBool());
+    }
+}
+
+void MainWindow::refreshControllerMenu()
+{
+    ui->menuController->clear();
+    ui->menuController->addSection(tr("Controller input"));
+
+    QMap<int, InputDevice *> orderedDevices;
+    for (InputDevice *device : m_joysticks->values())
+    {
+        if (device != nullptr)
+            orderedDevices.insert(device->getJoyNumber(), device);
+    }
+
+    if (orderedDevices.isEmpty())
+    {
+        QAction *emptyAction = ui->menuController->addAction(tr("No controllers connected"));
+        emptyAction->setEnabled(false);
+        return;
+    }
+
+    for (InputDevice *device : orderedDevices)
+    {
+        const QString actionText =
+            QStringLiteral("%1 %2").arg(device->getSDLName(), tr("(%1)").arg(device->getName()));
+        QAction *controllerAction = ui->menuController->addAction(actionText);
+        controllerAction->setCheckable(true);
+        controllerAction->setChecked(device->isControllerInputEnabled());
+        controllerAction->setToolTip(tr("Enable all mapped input from this controller"));
+        controllerAction->setStatusTip(
+            tr("Checked controllers are active. Input from multiple checked controllers is combined."));
+
+        const QPointer<InputDevice> guardedDevice(device);
+        const QString settingsKey = controllerInputSettingsKey(device);
+        connect(controllerAction, &QAction::toggled, this, [this, guardedDevice, settingsKey](bool enabled) {
+            if (guardedDevice.isNull())
+                return;
+
+            guardedDevice->setControllerInputEnabled(enabled);
+            {
+                QMutexLocker locker(m_settings->getLock());
+                m_settings->setValue(settingsKey, enabled ? "1" : "0");
+                m_settings->sync();
+            }
+            emit controllerInputEnabledChanged(guardedDevice.data(), enabled);
+        });
     }
 }
 
@@ -1435,6 +1515,8 @@ void MainWindow::propogateMappingUpdate(QString mapping, InputDevice *device) { 
 
 void MainWindow::testMappingUpdateNow(int index, InputDevice *device)
 {
+    initializeControllerInputState(device);
+
     QWidget *tab = ui->tabWidget->widget(index);
     if (tab != nullptr)
     {
@@ -1509,6 +1591,8 @@ void MainWindow::removeJoyTab(SDL_JoystickID deviceID)
 
 void MainWindow::addJoyTab(InputDevice *device)
 {
+    initializeControllerInputState(device);
+
     JoyTabWidget *tabwidget = new JoyTabWidget(device, m_settings, this);
     configureAutoProfileUi(tabwidget);
     QString joytabName = device->getSDLName();

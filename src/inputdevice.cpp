@@ -50,6 +50,7 @@ InputDevice::InputDevice(SDL_Joystick *joystick, int deviceIndex, AntiMicroSetti
     keyPressTime = 0;
     m_joyhandle = joystick;
     deviceEdited = false;
+    controllerInputEnabled.store(true);
     keyRepeatEnabled = false;
     keyRepeatDelay = 0;
     keyRepeatRate = 0;
@@ -709,6 +710,8 @@ void InputDevice::removeControlStick(int index)
 
 bool InputDevice::isActive() { return buttonDownCount > 0; }
 
+bool InputDevice::isControllerInputEnabled() const { return controllerInputEnabled.load(); }
+
 void InputDevice::buttonDownEvent(int setindex, int buttonindex)
 {
     Q_UNUSED(setindex);
@@ -1216,6 +1219,8 @@ void InputDevice::setDeviceKeyPressTime(int newPressTime)
     keyPressTime = newPressTime;
     emit propertyUpdated();
 }
+
+void InputDevice::setControllerInputEnabled(bool enabled) { controllerInputEnabled.store(enabled); }
 
 int InputDevice::getDeviceKeyPressTime() { return keyPressTime; }
 

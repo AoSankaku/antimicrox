@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.16)
 project(aboutdialogClass)
 
 # Tell CMake to run moc when necessary:
@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 # to always look for includes there:
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5Test REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test REQUIRED)
 
 set(GUIS_SRCS testaboutdialog.cpp
         testaddeditautoprofiledialog.cpp
@@ -22,3 +22,10 @@ set(GUIS_SRCS testaboutdialog.cpp
 add_executable(GuiTests ${GUIS_SRCS})
 #target_link_libraries( GuiTests antilib Qt5::Test )
 ADD_TEST(NAME GuiTests COMMAND GuiTests)
+
+add_executable(MouseInputSelectionTests
+        testmouseinputselection.cpp
+        ../src/mouseinputselection.cpp
+        )
+target_include_directories(MouseInputSelectionTests PRIVATE ../src)
+add_test(NAME MouseInputSelectionTests COMMAND MouseInputSelectionTests)

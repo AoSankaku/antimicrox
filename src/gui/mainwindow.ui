@@ -230,6 +230,11 @@ QStackedWidget#stackedWidget{
     <addaction name="actionOptions"/>
     <addaction name="actionUpdate_Joysticks"/>
    </widget>
+   <widget class="QMenu" name="menuController">
+    <property name="title">
+     <string>&amp;Controller</string>
+    </property>
+   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>He&amp;lp</string>
@@ -242,6 +247,7 @@ QStackedWidget#stackedWidget{
     <addaction name="actionAbout_Qt"/>
    </widget>
    <addaction name="menuQuit"/>
+   <addaction name="menuController"/>
    <addaction name="menuOptions"/>
    <addaction name="menuHelp"/>
   </widget>
