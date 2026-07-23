@@ -584,12 +584,12 @@ void JoyTabWidget::setAutoProfileState(bool active, bool paused)
     QString action;
     if (!autoProfileActive)
     {
-        message = tr("Automatic profiles are off. Manual profile and set changes will stay active.");
+        message = tr("Automatic profiles are off.");
         action = tr("Automatic profile switching is off. Enable it in Settings.");
     } else if (autoProfilePaused)
     {
         message =
-            tr("Automatic profile switching is temporarily paused. Manual profile and set changes will stay active.");
+            tr("Automatic profile switching is temporarily paused.");
         action = tr("Resume automatic profile switching");
     } else
     {
