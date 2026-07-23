@@ -496,6 +496,26 @@ bool WinExtras::raiseProcessPriority()
     return result;
 }
 
+bool WinExtras::preserveTimerResolutionWhenHidden()
+{
+    // On Windows 11, timer-resolution requests can be ignored automatically
+    // when a window-owning process is minimized, occluded, or otherwise
+    // invisible. AntiMicroX still generates real-time input while hidden in
+    // the system tray, so opt out of that power-throttling mechanism.
+    PROCESS_POWER_THROTTLING_STATE state = {};
+    state.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+    state.ControlMask = PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION;
+    state.StateMask = 0;
+
+    using SetProcessInformationProc = BOOL(WINAPI *)(HANDLE, PROCESS_INFORMATION_CLASS, LPVOID, DWORD);
+    const auto setProcessInformation = reinterpret_cast<SetProcessInformationProc>(
+        GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "SetProcessInformation"));
+    if (setProcessInformation == nullptr)
+        return false;
+
+    return setProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &state, sizeof(state));
+}
+
 QPoint WinExtras::getCursorPos()
 {
     POINT cursorPoint;

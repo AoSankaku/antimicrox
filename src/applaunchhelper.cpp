@@ -42,6 +42,10 @@ void AppLaunchHelper::initRunMethods()
 {
     if (graphical)
     {
+#ifdef Q_OS_WIN
+        if (!WinExtras::preserveTimerResolutionWhenHidden())
+            qWarning() << "Could not preserve high-resolution timers while AntiMicroX is hidden.";
+#endif
         establishMouseTimerConnections();
         enablePossibleMouseSmoothing();
         changeMouseRefreshRate();

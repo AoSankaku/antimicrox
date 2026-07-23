@@ -33,8 +33,7 @@ JoySensorPushButton::JoySensorPushButton(JoySensor *sensor, bool displayNames, Q
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &JoySensorPushButton::customContextMenuRequested, this, &JoySensorPushButton::showContextMenu);
 
-    connect(m_sensor, &JoySensor::active, this, &JoySensorPushButton::flash, Qt::QueuedConnection);
-    connect(m_sensor, &JoySensor::released, this, &JoySensorPushButton::unflash, Qt::QueuedConnection);
+    enableFlashes();
     connect(m_sensor, &JoySensor::sensorNameChanged, this, &JoySensorPushButton::refreshLabel);
 }
 
@@ -75,8 +74,9 @@ void JoySensorPushButton::disableFlashes()
  */
 void JoySensorPushButton::enableFlashes()
 {
-    connect(m_sensor, &JoySensor::active, this, &JoySensorPushButton::flash, Qt::QueuedConnection);
-    connect(m_sensor, &JoySensor::released, this, &JoySensorPushButton::unflash, Qt::QueuedConnection);
+    const auto connectionType = static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::UniqueConnection);
+    connect(m_sensor, &JoySensor::active, this, &JoySensorPushButton::flash, connectionType);
+    connect(m_sensor, &JoySensor::released, this, &JoySensorPushButton::unflash, connectionType);
 }
 
 /**

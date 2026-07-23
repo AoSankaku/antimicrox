@@ -83,6 +83,7 @@ class InputDaemon : public QObject
     void addInputDevice(int index, QMap<QString, int> &uniques, int &counterUniques, bool &duplicatedGamepad);
     void refreshIndexes();
     void setControllerInputEnabled(InputDevice *device, bool enabled);
+    void resetActiveMouseAcceleration();
 
   private slots:
     void stop();

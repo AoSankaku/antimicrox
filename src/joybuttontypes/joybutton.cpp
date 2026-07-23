@@ -765,7 +765,12 @@ void JoyButton::addEachSlotToActives(JoyButtonSlot *slot, int &i, bool &delaySeq
         if (pendingMouseButtons.size() == 0)
             mouseHelper.setFirstSpringStatus(true);
 
-        pendingMouseButtons.append(this);
+        // A button can own more than one mouse-movement slot, and profile
+        // reinitialization can also replay its current state. The button
+        // processes all of its queued/active slots in one mouseEvent() call,
+        // so registering the same button more than once multiplies its output.
+        if (!pendingMouseButtons.contains(this))
+            pendingMouseButtons.append(this);
         mouseEventQueue.enqueue(slot);
 
         // Temporarily lower timer interval. Helps improve mouse control
@@ -3140,12 +3145,6 @@ void JoyButton::releaseActiveSlots()
         }
 
         getActiveSlotsLocal().clear();
-        currentMouseEvent = nullptr;
-
-        if (!mouseEventQueue.isEmpty())
-            mouseEventQueue.clear();
-
-        pendingMouseButtons.removeAll(this);
         currentWheelVerticalEvent = nullptr;
         currentWheelHorizontalEvent = nullptr;
         mouseWheelVerticalEventTimer.stop();
@@ -3164,15 +3163,21 @@ void JoyButton::releaseActiveSlots()
             lastWheelHorizontalDistance = getMouseDistanceFromDeadZone();
             wheelHorizontalTime.restart();
         }
+    }
 
-        // Check if mouse remainder should be zero.
-        // Only need to check one list from cursor speeds and spring speeds
-        // since the correspond Y lists will be the same size.
-        if ((pendingMouseButtons.length() == 0) && (cursorXSpeeds.length() == 0) && (springXSpeeds.length() == 0))
-        {
-            GlobalVariables::JoyButton::cursorRemainderX = 0;
-            GlobalVariables::JoyButton::cursorRemainderY = 0;
-        }
+    // Mouse bookkeeping must be cleared even if the active slot list was
+    // already emptied by a profile or set transition.
+    currentMouseEvent = nullptr;
+    mouseEventQueue.clear();
+    pendingMouseButtons.removeAll(this);
+
+    // Check if mouse remainder should be zero.
+    // Only need to check one list from cursor speeds and spring speeds
+    // since the corresponding Y lists will be the same size.
+    if ((pendingMouseButtons.length() == 0) && (cursorXSpeeds.length() == 0) && (springXSpeeds.length() == 0))
+    {
+        GlobalVariables::JoyButton::cursorRemainderX = 0;
+        GlobalVariables::JoyButton::cursorRemainderY = 0;
     }
 }
 
@@ -3211,10 +3216,8 @@ void JoyButton::releaseEachSlot(bool &changeRepeatState, int &references, int te
 
         if (mousemode == MouseCursor)
         {
-            QList<int> indexesToRemove;
-
-            releaseMoveSlots(cursorXSpeeds, slot, indexesToRemove);
-            releaseMoveSlots(cursorYSpeeds, slot, indexesToRemove);
+            releaseMoveSlots(cursorXSpeeds, slot);
+            releaseMoveSlots(cursorYSpeeds, slot);
             slot->getEasingTime()->restart();
             slot->setEasingStatus(false);
         } else if (mousemode == JoyButton::MouseSpring)
@@ -3304,28 +3307,13 @@ void JoyButton::checkSpringDeadCircle(int tempcode, double &springDeadCircle, in
     }
 }
 
-void JoyButton::releaseMoveSlots(QList<JoyButton::mouseCursorInfo> &cursorSpeeds, JoyButtonSlot *slot,
-                                 QList<int> &indexesToRemove)
+void JoyButton::releaseMoveSlots(QList<JoyButton::mouseCursorInfo> &cursorSpeeds, JoyButtonSlot *slot)
 {
-    QListIterator<mouseCursorInfo> iter(cursorSpeeds);
-    int i = cursorSpeeds.length();
-
-    while (iter.hasNext())
+    for (int i = cursorSpeeds.size() - 1; i >= 0; --i)
     {
-        mouseCursorInfo info = iter.next();
-        if (info.slot == slot)
-            indexesToRemove.append(i);
-        i++;
+        if (cursorSpeeds.at(i).slot == slot)
+            cursorSpeeds.removeAt(i);
     }
-
-    QListIterator<int> removeIter(indexesToRemove);
-    while (removeIter.hasPrevious())
-    {
-        int index = removeIter.previous();
-        cursorSpeeds.removeAt(index);
-    }
-
-    indexesToRemove.clear();
 }
 
 bool JoyButton::containsReleaseSlots()
@@ -4379,6 +4367,13 @@ void JoyButton::resetAccelerationDistances()
 
     currentAccelerationDistance = getAccelerationDistance();
     currentMouseDistance = getMouseDistanceFromDeadZone();
+}
+
+void JoyButton::resetAccelerationState()
+{
+    restartAccelParams(true, true, false);
+    updateStartingMouseDistance = true;
+    updateInitAccelValues = true;
 }
 
 void JoyButton::initializeDistanceValues()

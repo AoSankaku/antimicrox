@@ -109,6 +109,11 @@ void InputDevice::transferReset()
         getDpadstatesLocal().append(dpad->getCurrentDirection());
     }
 
+    // Release the old profile synchronously before its objects are replaced.
+    // Relying on deleteLater() can leave old mouse contributors active while
+    // the newly loaded profile is already processing the captured input state.
+    current_set->release();
+
     reset();
 }
 
@@ -120,21 +125,21 @@ void InputDevice::reInitButtons()
     {
         bool value = getButtonstatesLocal().at(i);
         JoyButton *button = current_set->getJoyButton(i);
-        button->queuePendingEvent(value);
+        button->queuePendingEvent(value, true);
     }
 
     for (int i = 0; i < current_set->getNumberAxes(); i++)
     {
         int value = getAxesstatesLocal().at(i);
         JoyAxis *axis = current_set->getJoyAxis(i);
-        axis->queuePendingEvent(value);
+        axis->queuePendingEvent(value, true);
     }
 
     for (int i = 0; i < current_set->getNumberHats(); i++)
     {
         int value = getDpadstatesLocal().at(i);
         JoyDPad *dpad = current_set->getJoyDPad(i);
-        dpad->queuePendingEvent(value);
+        dpad->queuePendingEvent(value, true);
     }
 
     activatePossibleControlStickEvents();
@@ -172,8 +177,7 @@ void InputDevice::setActiveSetNumber(int index)
             JoyButton *button = current_set->getJoyButton(i);
             buttonstates.append(button->getButtonState());
             tempSet->getJoyButton(i)->copyLastMouseDistanceFromDeadZone(button);
-            tempSet->getJoyButton(i)->copyLastAccelerationDistance(button);
-            tempSet->getJoyButton(i)->setUpdateInitAccel(false);
+            tempSet->getJoyButton(i)->resetAccelerationState();
         }
 
         for (int i = 0; i < current_set->getNumberAxes(); i++)
@@ -186,7 +190,7 @@ void InputDevice::setActiveSetNumber(int index)
 
             if (button != nullptr)
             {
-                button->setUpdateInitAccel(false);
+                button->resetAccelerationState();
             }
         }
 
@@ -196,8 +200,13 @@ void InputDevice::setActiveSetNumber(int index)
             dpadstates.append(dpad->getCurrentDirection());
             JoyDPadButton::JoyDPadDirections tempDir =
                 static_cast<JoyDPadButton::JoyDPadDirections>(dpad->getCurrentDirection());
-            tempSet->getJoyDPad(i)->setDirButtonsUpdateInitAccel(tempDir, false);
             tempSet->getJoyDPad(i)->copyLastDistanceValues(dpad);
+            const auto destinationButtons = tempSet->getJoyDPad(i)->getDirectionButtons(tempDir);
+            for (JoyDPadButton *button : destinationButtons)
+            {
+                if (button != nullptr)
+                    button->resetAccelerationState();
+            }
         }
 
         for (int i = 0; i < current_set->getNumberSticks(); i++)
@@ -206,7 +215,15 @@ void InputDevice::setActiveSetNumber(int index)
             // Copying is not required here.
             JoyControlStick *stick = current_set->getJoyStick(i);
             stickstates.append(stick->getCurrentDirection());
-            tempSet->getJoyStick(i)->setDirButtonsUpdateInitAccel(stick->getCurrentDirection(), false);
+            // Treat held directions as newly activated in the destination set so
+            // time-based mouse acceleration cannot carry across set changes.
+            const auto destinationButtons =
+                tempSet->getJoyStick(i)->getButtonsForDirection(stick->getCurrentDirection());
+            for (JoyControlStickButton *button : destinationButtons)
+            {
+                if (button != nullptr)
+                    button->resetAccelerationState();
+            }
         }
 
         for (int i = 0; i < current_set->getNumberVDPads(); i++)
@@ -215,8 +232,13 @@ void InputDevice::setActiveSetNumber(int index)
             vdpadstates.append(dpad->getCurrentDirection());
             JoyDPadButton::JoyDPadDirections tempDir =
                 static_cast<JoyDPadButton::JoyDPadDirections>(dpad->getCurrentDirection());
-            tempSet->getVDPad(i)->setDirButtonsUpdateInitAccel(tempDir, false);
             tempSet->getVDPad(i)->copyLastDistanceValues(dpad);
+            const auto destinationButtons = tempSet->getVDPad(i)->getDirectionButtons(tempDir);
+            for (JoyDPadButton *button : destinationButtons)
+            {
+                if (button != nullptr)
+                    button->resetAccelerationState();
+            }
         }
 
         // Release all current pressed elements and change set number

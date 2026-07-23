@@ -19,6 +19,7 @@ also releases its currently active mapped output.
 | Only the checked controller contributes when one is enabled | `only explicitly enabled source is used` | Unit | PASS | Unchecked candidates are filtered without inspecting input strength |
 | No controller input is produced when every controller is unchecked | `no enabled source produces no movement` | Unit | PASS | The selected list is empty |
 | Invalid or disconnected candidates are ignored | `invalid candidates are ignored` | Unit | PASS | Null button and source candidates are filtered |
+| A replayed or multiply registered button contributes once | `the same pending button contributes only once` | Unit | PASS | Selection de-duplicates identical button pointers while still combining distinct controllers |
 
 ## Validation
 

@@ -77,5 +77,16 @@ int main()
                                 "invalid candidates are ignored");
     }
 
+    {
+        const std::vector<MouseInputCandidate> candidates = {
+            {button(1), device(1), true},
+            {button(1), device(1), true},
+            {button(2), device(2), true},
+        };
+
+        passed &= expectButtons(selectMouseInputButtons(candidates), {button(1), button(2)},
+                                "the same pending button contributes only once");
+    }
+
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

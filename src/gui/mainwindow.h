@@ -92,6 +92,7 @@ class MainWindow : public QMainWindow
     void readConfig(int index); // MainConfiguration class
     void mappingUpdated(QString mapping, InputDevice *device);
     void controllerInputEnabledChanged(InputDevice *device, bool enabled);
+    void mouseAccelerationResetRequested();
 
   public slots:
     void checkEachTenMinutesBattery(QMap<SDL_JoystickID, InputDevice *> *joysticks);

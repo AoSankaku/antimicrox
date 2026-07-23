@@ -866,6 +866,12 @@ void MainWindow::disableFlashActions()
             stickWidget->disableFlashes();
         }
 
+        QList<JoySensorPushButton *> sensors = ui->tabWidget->widget(i)->findChildren<JoySensorPushButton *>();
+        for (const auto &sensorWidget : sensors)
+        {
+            sensorWidget->disableFlashes();
+        }
+
         QList<JoyDPadButtonWidget *> list4 = ui->tabWidget->widget(i)->findChildren<JoyDPadButtonWidget *>();
         QListIterator<JoyDPadButtonWidget *> iter4(list4);
         while (iter4.hasNext())
@@ -970,6 +976,9 @@ void MainWindow::enableFlashActions()
 // Intermediate slot used in Design mode
 void MainWindow::hideWindow()
 {
+    if (!isMinimized())
+        emit mouseAccelerationResetRequested();
+
     disableFlashActions();
     signalDisconnect = true;
     hide();
@@ -1022,6 +1031,8 @@ void MainWindow::showEvent(QShowEvent *event)
 { // Check if hideEvent has been processed
     if (signalDisconnect && isVisible())
     {
+        emit mouseAccelerationResetRequested();
+
         // Restore flashing buttons
         enableFlashActions();
         signalDisconnect = false;
@@ -1055,6 +1066,8 @@ void MainWindow::changeEvent(QEvent *event)
         QWindowStateChangeEvent *e = static_cast<QWindowStateChangeEvent *>(event);
         if (e->oldState() != Qt::WindowMinimized && isMinimized())
         {
+            emit mouseAccelerationResetRequested();
+
             bool minimizeToTaskbar = m_settings->value("MinimizeToTaskbar", false).toBool();
             if (QSystemTrayIcon::isSystemTrayAvailable() && showTrayIcon && !minimizeToTaskbar)
             {

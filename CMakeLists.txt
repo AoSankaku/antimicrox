@@ -773,8 +773,22 @@ if(WIN32)
     # Required platform plugin
     get_target_property(QtCore_LOCATION Qt${QT_VERSION_MAJOR}::Core LOCATION)
     get_filename_component(QT_DLL_DIR ${QtCore_LOCATION} PATH)
+    find_program(QT_QMAKE_EXECUTABLE
+        NAMES qmake${QT_VERSION_MAJOR} qmake
+        HINTS "${QT_DLL_DIR}")
+    execute_process(
+        COMMAND "${QT_QMAKE_EXECUTABLE}" -query QT_INSTALL_PLUGINS
+        OUTPUT_VARIABLE QT_PLUGIN_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    add_custom_command(TARGET antimicrox POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:antimicrox>/platforms"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${QT_PLUGIN_DIR}/platforms/qwindows.dll"
+            "$<TARGET_FILE_DIR:antimicrox>/platforms/qwindows.dll"
+        COMMENT "Copying the Qt Windows platform plugin")
     install(FILES
-        ${QT_DLL_DIR}/../plugins/platforms/qwindows.dll
+        ${QT_PLUGIN_DIR}/platforms/qwindows.dll
         DESTINATION ./bin/platforms/)
 endif(WIN32)
 

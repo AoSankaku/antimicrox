@@ -1318,6 +1318,15 @@ void InputDaemon::resetActiveButtonMouseDistances()
     JoyButton::resetActiveButtonMouseDistances(JoyButton::getMouseHelper());
 }
 
+void InputDaemon::resetActiveMouseAcceleration()
+{
+    for (JoyButton *button : *JoyButton::getPendingMouseButtons())
+    {
+        if (button != nullptr)
+            button->resetAccelerationState();
+    }
+}
+
 void InputDaemon::setControllerInputEnabled(InputDevice *device, bool enabled)
 {
     if (device == nullptr || !m_joysticks->values().contains(device))

@@ -1425,6 +1425,25 @@ void JoyTabWidget::showStickAssignmentDialog()
 
 void JoyTabWidget::loadConfigFile(QString fileLocation)
 {
+    const QFileInfo requestedProfile(fileLocation);
+    const QFileInfo currentProfile(configBox->currentData().toString());
+    const QString requestedPath = requestedProfile.canonicalFilePath().isEmpty()
+                                      ? requestedProfile.absoluteFilePath()
+                                      : requestedProfile.canonicalFilePath();
+    const QString currentPath = currentProfile.canonicalFilePath().isEmpty() ? currentProfile.absoluteFilePath()
+                                                                             : currentProfile.canonicalFilePath();
+#ifdef Q_OS_WIN
+    constexpr Qt::CaseSensitivity pathCaseSensitivity = Qt::CaseInsensitive;
+#else
+    constexpr Qt::CaseSensitivity pathCaseSensitivity = Qt::CaseSensitive;
+#endif
+
+    if (!requestedPath.isEmpty() && requestedPath.compare(currentPath, pathCaseSensitivity) == 0)
+    {
+        qDebug() << "Skipping auto-profile reload because it is already active:" << requestedPath;
+        return;
+    }
+
     checkForUnsavedProfile(-1);
 
     if (!m_joystick->isDeviceEdited())

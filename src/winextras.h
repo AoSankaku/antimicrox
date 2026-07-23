@@ -28,6 +28,7 @@ class WinExtras : public QObject
     static void grabCurrentPointerPrecision();
     static QString getCurrentWindowText();
     static bool raiseProcessPriority();
+    static bool preserveTimerResolutionWhenHidden();
     static QPoint getCursorPos();
 
   protected:

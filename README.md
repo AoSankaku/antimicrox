@@ -21,18 +21,27 @@ including:
 
 ### 2026-07-23
 
-- **Automatic profile lock toggle switch**: Added a status banner to every controller tab. Its lock
-  button can temporarily pause and resume automatic profile switching, so
-  manual profile and set changes can remain active when needed.
+- **Automatic-profile pause control**: Added a status banner to every controller
+  tab. Its lock button can temporarily pause and resume automatic profile
+  switching, so manual profile and set changes can remain active when needed.
 - **Automatic profiles enabled by default**: Automatic profiles are now enabled,
   synchronized, and initialized at startup on Windows and X11.
 - **Easier profile selection**: Added a profile selector to the automatic-profile
   editor. It lists profiles from the preferred profile directory and recently
   used controller profiles.
+- **Explicit controller activation**: Added a Controller menu with one checkable
+  entry per connected controller. Unchecked controllers produce no mapped
+  input; input from multiple checked controllers is combined.
 - **Working Windows window capture**: The capture dialog now comes to the
   foreground, and the selected application's full path is assigned correctly.
-- **Faster timed window capture**: The default delay is now three seconds (one second must be too short for everyone), the
-  maximum is 15 seconds, and AntiMicroX minimizes while waiting for capture.
+- **Faster timed window capture**: The default delay is now three seconds
+  because one second was often too short. The maximum is 15 seconds, and
+  AntiMicroX minimizes while waiting for capture.
+- **Consistent cursor speed in the system tray**: Windows 11 may reduce timer
+  precision for applications that are minimized or otherwise hidden. AntiMicroX
+  now preserves its requested timer resolution while running in the system
+  tray, keeping cursor movement consistent whether its main window is visible
+  or hidden.
 
 ### 2026-07-22
 
@@ -40,7 +49,7 @@ including:
   Windows UAC boundaries. Instances running at different privilege levels can
   now find the same local signal server, and AntiMicroX exits safely if it
   cannot start the server.
-- **No more double-speed cursor while AntiMicroX is in the foreground**:
+- **No duplicated cursor input from a second AntiMicroX instance**:
   Preventing a second instance from processing the same controller input keeps
   cursor movements from being applied twice.
 - **Clearer Windows diagnostics**: Added local-server and `SendInput` diagnostics

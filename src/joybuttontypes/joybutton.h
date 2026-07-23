@@ -110,6 +110,7 @@ class JoyButton : public QObject
     void setCycleResetStatus(bool enabled);
     void copyAssignments(JoyButton *destButton);
     void resetAccelerationDistances();
+    void resetAccelerationState();
     void setExtraAccelerationStatus(bool status);
     void setExtraAccelerationMultiplier(double value);
     void setCycleResetTime(int interval); // .., unsigned
@@ -529,8 +530,8 @@ class JoyButton : public QObject
     void changeStatesQueue(bool currentReleased);
     void countActiveSlots(int tempcode, int &references, JoyButtonSlot *slot, QHash<int, int> &activeSlotsHash,
                           bool &changeRepeatState, bool activeSlotHashWindows = false); // JoyButtonSlots class
-    void releaseMoveSlots(QList<JoyButton::mouseCursorInfo> &cursorSpeeds, JoyButtonSlot *slot,
-                          QList<int> &indexesToRemove); // JoyButtonSlots class
+    void releaseMoveSlots(QList<JoyButton::mouseCursorInfo> &cursorSpeeds,
+                          JoyButtonSlot *slot); // JoyButtonSlots class
     void setSpringDeadCircle(double &springDeadCircle, int mouseDirection);
     void checkSpringDeadCircle(int tempcode, double &springDeadCircle, int mouseSlot1, int mouseSlot2);
     static void distanceForMovingAx(double &finalAx, mouseCursorInfo infoAx);
